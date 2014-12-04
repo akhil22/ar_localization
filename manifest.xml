@@ -1,0 +1,18 @@
+<package>
+  <description brief="ar_localization">
+
+     ar_localization
+
+     </description>
+     <author>akhil</author>
+     <license>BSD</license>
+     <review status="unreviewed" notes=""/>
+     <url>http://ros.org/wiki/ar_localization</url>
+     <depend package="artoolkit"/>
+     <depend package="ar_pose"/>
+     <depend package="geometry_msgs"/>
+     <depend package="tf"/>
+     <depend package="roscpp"/>
+</package>
+
+
