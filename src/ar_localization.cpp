@@ -4,6 +4,7 @@
 #include<ar_pose/ARMarker.h>
 #include<geometry_msgs/Pose.h>
 #include<tf/transform_broadcaster.h>
+#include<tf/transform_listener.h>
 #include<stdlib.h>
 #include<stdio.h>
 #include<string>
@@ -57,7 +58,7 @@ ArLocalization::ArLocalization(){
 	//read marker location from location file
 	location = read_LocData (marker_locations_list_, &markernum_);
 
-	//create frames for each of these markrer location
+	//create frames for each of these marker location
 
 	transform_ = (tf::Transform *) malloc (sizeof(tf::Transform) * markernum_);
 	for (int i=0; i<markernum_; i++){	
@@ -69,10 +70,27 @@ ArLocalization::ArLocalization(){
 		for (int i=0; i<markernum_; i++){
 			bf_.sendTransform( tf::StampedTransform( transform_[i], ros::Time::now(), "map", location[i].name));
 		}
+		ros::spinOnce();
 		r.sleep();
 	}
 }
 void ArLocalization::markerCallback_(const ar_pose::ARMarkers::ConstPtr& msg){
+	int num_markers = msg->markers.size();
+	for(int i = 0; i< num_markers; i++){
+		tf::Transform transform;
+		transform.setOrigin(tf::Vector3 (msg->markers[i].pose.pose.position.x,msg->markers[i].pose.pose.position.y,msg->markers[i].pose.pose.position.z));
+		transform.setRotation(tf::Quaternion (msg->markers[i].pose.pose.orientation.x,msg->markers[i].pose.pose.orientation.y,msg->markers[i].pose.pose.orientation.z,msg->markers[i].pose.pose.orientation.w));
+		tf::StampedTransform transform2;
+		tf::TransformListener listener;
+	//	listener.waitForTransform("/camera_link","/camera_rgb_optical_frame",ros::Time(0),ros::Duration(0.1));
+	//	listener.lookupTransform("/camera_link","/camera_rgb_optical_frame",ros::Time(0),transform2);
+		transform2.setOrigin( tf::Vector3(0,-0.045,0));
+		transform2.setRotation( tf::Quaternion( -0.5, 0.5, -0.5,0.5));
+		tf::Transform transform3 = transform2 * (transform.inverse());
+		tf::Transform transform4 = transform_[msg->markers[i].id]*(transform3.inverse());
+	        bf_.sendTransform( tf::StampedTransform( transform4, ros::Time::now(), "map", "camera_frame"));
+
+	}
 }
 
 int main(int argc,char **argv){
