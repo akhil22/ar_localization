@@ -80,13 +80,10 @@ void ArLocalization::markerCallback_(const ar_pose::ARMarkers::ConstPtr& msg){
 		tf::Transform transform;
 		transform.setOrigin(tf::Vector3 (msg->markers[i].pose.pose.position.x,msg->markers[i].pose.pose.position.y,msg->markers[i].pose.pose.position.z));
 		transform.setRotation(tf::Quaternion (msg->markers[i].pose.pose.orientation.x,msg->markers[i].pose.pose.orientation.y,msg->markers[i].pose.pose.orientation.z,msg->markers[i].pose.pose.orientation.w));
-		tf::StampedTransform transform2;
-		tf::TransformListener listener;
-	//	listener.waitForTransform("/camera_link","/camera_rgb_optical_frame",ros::Time(0),ros::Duration(0.1));
-	//	listener.lookupTransform("/camera_link","/camera_rgb_optical_frame",ros::Time(0),transform2);
+		tf::Transform transform2;
 		transform2.setOrigin( tf::Vector3(0,-0.045,0));
 		transform2.setRotation( tf::Quaternion( -0.5, 0.5, -0.5,0.5));
-		tf::Transform transform3 = transform2 * (transform.inverse());
+		tf::Transform transform3 = transform2 * (transform);
 		tf::Transform transform4 = transform_[msg->markers[i].id]*(transform3.inverse());
 	        bf_.sendTransform( tf::StampedTransform( transform4, ros::Time::now(), "map", "camera_frame"));
 
