@@ -14,14 +14,24 @@ class ArLocalization{
 	private:
 		//num of markers
 		int markernum_;
+	        LocationData_T *location;
+		
 		//ros node handle
 		ros::NodeHandle nh_;
+		
 		//subsciber to get marker pose
 		ros::Subscriber marker_sub_;
-		//tranformation publisher 
+		
+		//camera tranformation publisher 
 		tf::TransformBroadcaster tf_pub_;
+
+		//ar marker location publisher
+		tf::TransformBroadcaster bf_;
+		tf::Transform *transform_;
+		
 		//file containing marker locations
 		char marker_locations_list_[FILENAME_MAX];
+		
 		//function to be called when we see markers
 		void markerCallback_(const ar_pose::ARMarkers::ConstPtr& msg);
 };
@@ -33,7 +43,6 @@ ArLocalization::ArLocalization(){
 	std::string package_path = ros::package::getPath (ROS_PACKAGE_NAME);
 
 	//location of markers in the map 
-	LocationData_T *location;
 	
 	ros::NodeHandle private_nh_;
 
@@ -47,14 +56,23 @@ ArLocalization::ArLocalization(){
 
 	//read marker location from location file
 	location = read_LocData (marker_locations_list_, &markernum_);
-}
 
-void ArLocalization::markerCallback_(const ar_pose::ARMarkers::ConstPtr& msg){
-	int num_markers = msg->markers.size();
-	for(int i=0;i<num_markers;i++){
-		std::cout<<i<<" "<<msg->markers[i].id<<" ";
+	//create frames for each of these markrer location
+
+	transform_ = (tf::Transform *) malloc (sizeof(tf::Transform) * markernum_);
+	for (int i=0; i<markernum_; i++){	
+		transform_[i].setOrigin( tf::Vector3 (location[i].marker_coord[0], location[i].marker_coord[1], location[i].marker_coord[2]));
+		transform_[i].setRotation (tf::Quaternion(location[i].marker_quat[0], location[i].marker_quat[1], location[i].marker_quat[2], location[i].marker_quat[3]));	
 	}
-	std::cout<<std::endl;
+	ros::Rate r(100);
+	while (ros::ok()){
+		for (int i=0; i<markernum_; i++){
+			bf_.sendTransform( tf::StampedTransform( transform_[i], ros::Time::now(), "map", location[i].name));
+		}
+		r.sleep();
+	}
+}
+void ArLocalization::markerCallback_(const ar_pose::ARMarkers::ConstPtr& msg){
 }
 
 int main(int argc,char **argv){
