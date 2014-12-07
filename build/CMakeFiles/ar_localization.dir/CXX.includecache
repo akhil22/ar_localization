@@ -19,6 +19,8 @@ ar_pose/ARMarker.h
 -
 geometry_msgs/Pose.h
 -
+geometry_msgs/PoseWithCovarianceStamped.h
+-
 tf/transform_broadcaster.h
 -
 tf/transform_listener.h
@@ -31,6 +33,8 @@ string
 -
 ar_localization/marker_location.h
 /home/akhil/rosbuild_ws/ar_localization/src/ar_localization/marker_location.h
+math.h
+-
 
 /home/akhil/rosbuild_ws/ar_tools/ar_pose/msg_gen/cpp/include/ar_pose/ARMarker.h
 string
@@ -208,6 +212,26 @@ ros/builtin_message_traits.h
 ros/message_operations.h
 -
 geometry_msgs/Pose.h
+-
+
+/opt/ros/hydro/include/geometry_msgs/PoseWithCovarianceStamped.h
+string
+-
+vector
+-
+map
+-
+ros/types.h
+-
+ros/serialization.h
+-
+ros/builtin_message_traits.h
+-
+ros/message_operations.h
+-
+std_msgs/Header.h
+-
+geometry_msgs/PoseWithCovariance.h
 -
 
 /opt/ros/hydro/include/geometry_msgs/Quaternion.h

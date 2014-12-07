@@ -14,6 +14,7 @@ CMakeFiles/ar_localization.dir/src/ar_localization.cpp.o
  /opt/ros/hydro/include/geometry_msgs/Pose.h
  /opt/ros/hydro/include/geometry_msgs/PoseStamped.h
  /opt/ros/hydro/include/geometry_msgs/PoseWithCovariance.h
+ /opt/ros/hydro/include/geometry_msgs/PoseWithCovarianceStamped.h
  /opt/ros/hydro/include/geometry_msgs/Quaternion.h
  /opt/ros/hydro/include/geometry_msgs/QuaternionStamped.h
  /opt/ros/hydro/include/geometry_msgs/Transform.h
