@@ -1,3 +1,6 @@
+/* Author: Akhil Kumar Nagariya 
+   RRC IIIT Hyderabad */
+
 #include<ros/ros.h>
 #include<ros/package.h>
 #include<ar_pose/ARMarkers.h>
@@ -42,7 +45,7 @@ class ArLocalization{
 		ros::Time then_;
 		bool first_publish_;
 
-		//check range
+		//check range, if observed marker is within range then return true
 		bool checkRange(ar_pose::ARMarker marker);
 };
 
@@ -72,7 +75,7 @@ ArLocalization::ArLocalization(){
 	//read marker location from location file
 	location = read_LocData (marker_locations_list_, &markernum_);
 
-	//create frames for each of these marker location
+	//create frames for each of these marker location for visualization in Rviz 
 
 	transform_ = (tf::Transform *) malloc (sizeof(tf::Transform) * markernum_);
 	for (int i=0; i<markernum_; i++){	
@@ -80,6 +83,8 @@ ArLocalization::ArLocalization(){
 		transform_[i].setRotation (tf::Quaternion(location[i].marker_quat[0], location[i].marker_quat[1], location[i].marker_quat[2], location[i].marker_quat[3]));	
 	}
 	ros::Rate r(100);
+
+	//publish Transform 
 	while (ros::ok()){
 		for (int i=0; i<markernum_; i++){
 			bf_.sendTransform( tf::StampedTransform( transform_[i], ros::Time::now(), "map", location[i].name));
@@ -98,6 +103,8 @@ bool ArLocalization::checkRange(const ar_pose::ARMarker marker){
 }
 
 void ArLocalization::markerCallback_(const ar_pose::ARMarkers::ConstPtr& msg){
+
+	//publish marker pose only after 2 sec from last publish 
 	if(first_publish_){
 		then_ = ros::Time::now();
 		first_publish_ = 0;
@@ -111,19 +118,31 @@ void ArLocalization::markerCallback_(const ar_pose::ARMarkers::ConstPtr& msg){
 	}
 	int num_markers = msg->markers.size();
 	for(int i = 0; i< num_markers; i++){
+
+		//check if observed marker is in range 
 		if(!checkRange(msg->markers[i]))
 				continue;
 		tf::Transform transform;
+
+		//transformation of marker with respect to camera_depth_optical_frame
 		transform.setOrigin(tf::Vector3 (msg->markers[i].pose.pose.position.x,msg->markers[i].pose.pose.position.y,msg->markers[i].pose.pose.position.z));
 		transform.setRotation(tf::Quaternion (msg->markers[i].pose.pose.orientation.x,msg->markers[i].pose.pose.orientation.y,msg->markers[i].pose.pose.orientation.z,msg->markers[i].pose.pose.orientation.w));
 		tf::Transform transform2;
+		
+		//transformation of camera_depth_optical_frame with respect to camera_depth_frame
 		transform2.setOrigin( tf::Vector3(0,-0.045,0));
 		transform2.setRotation( tf::Quaternion( -0.5, 0.5, -0.5,0.5));
+		
+		//transformation of marker with respect to camera_depth_frame
 		tf::Transform transform3 = transform2 * (transform);
+		
+		//transformation4 --> transformation of camera with respect to map frame
 		tf::Transform transform4 = transform_[msg->markers[i].id]*(transform3.inverse());
+
+		//publish the transformation 
 	        bf_.sendTransform( tf::StampedTransform( transform4, ros::Time::now(), "map", "camera_frame"));
 
-		//create pose msg to publish it on initialpose 
+		//create pose msg to publish it on initialpose to intialize the partical filter 
 		geometry_msgs::PoseWithCovarianceStamped robot_pose;
 		robot_pose.header.stamp = ros::Time::now();
 		robot_pose.header.frame_id = std::string("map");
@@ -134,12 +153,10 @@ void ArLocalization::markerCallback_(const ar_pose::ARMarkers::ConstPtr& msg){
 		robot_pose.pose.pose.position.z = origin[2];
 		double yaw_temp = tf::getYaw(transform4.getRotation());
 		robot_pose.pose.pose.orientation = tf::createQuaternionMsgFromYaw(yaw_temp);
-//		robot_pose.pose.pose.orientation.x = quat[0];
-//		robot_pose.pose.pose.orientation.y = quat[1];
-//		robot_pose.pose.pose.orientation.z = quat[2];
-	//	robot_pose.pose.pose.orientation.w = (transform4.getRotation()).getW();
-		robot_pose.pose.covariance[0] = 0.01;
-		robot_pose.pose.covariance[7] = 0.01;
+
+		//create covariance matirx
+		robot_pose.pose.covariance[0] = 0.007;
+		robot_pose.pose.covariance[7] = 0.007;
 		robot_pose.pose.covariance[35] = 0.01;
 		then_ = ros::Time::now();
 		pose_pub_.publish(robot_pose);
